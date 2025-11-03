@@ -1,0 +1,8 @@
+flask==3.0.3
+sqlalchemy==2.0.34
+pandas==2.2.2
+numpy==1.26.4
+statsmodels==0.14.2
+keras==3.4.1
+tensorflow==2.16.1         # on Windows this pulls tensorflow-intel wheel
+apscheduler==3.10.4
