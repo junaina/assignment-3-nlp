@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Metrics Monitor</title>
+  <script src="{{ url_for('static', filename='plotly.min.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+  <style>
+    .toolbar { display:flex; gap:8px; align-items:center; margin-bottom: 8px; }
+    #mchart { height: 520px; }
+    #empty { padding: 16px; color: #666; }
+    .muted { color:#666; font-size:0.9em; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="{{ url_for('index') }}">&larr; Back</a>
+    <h2>Continuous Metrics</h2>
+    <div class="toolbar">
+      <label for="symbol">Symbol</label>
+      <select id="symbol">
+        {% for s in symbols %}
+          <option value="{{ s }}" {% if s==default_symbol %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <button id="refresh">Refresh</button>
+      <span id="status" class="muted"></span>
+    </div>
+
+    <div id="mchart"></div>
+    <div id="empty" style="display:none;">No metrics yet for this symbol. Try **Refresh** or run an evaluation.</div>
+  </div>
+
+  <script>
+    async function loadMetrics(symbol) {
+      const res = await fetch(`{{ url_for('api_metrics') }}?symbol=${encodeURIComponent(symbol)}`);
+      if (!res.ok) { throw new Error("metrics api failed"); }
+      return await res.json();
+    }
+
+    function draw(m) {
+      const chartEl = document.getElementById("mchart");
+      const emptyEl = document.getElementById("empty");
+
+      // Empty-state handling
+      if (!m.x || !m.x.length) {
+        Plotly.purge(chartEl);
+        emptyEl.style.display = "block";
+        chartEl.style.display = "none";
+        return;
+      } else {
+        emptyEl.style.display = "none";
+        chartEl.style.display = "block";
+      }
+
+      const data = [
+        {type:"scatter", mode:"lines+markers", x:m.x, y:m.mae,  name:"MAE"},
+        {type:"scatter", mode:"lines+markers", x:m.x, y:m.rmse, name:"RMSE"},
+        {type:"scatter", mode:"lines+markers", x:m.x, y:m.mape, name:"MAPE (%)", yaxis:"y2"}
+      ];
+      const layout = {
+        xaxis:{title:"Time"},
+        yaxis:{title:"MAE/RMSE"},
+        yaxis2:{title:"MAPE (%)", overlaying:"y", side:"right", showgrid:false, zeroline:true},
+        legend:{orientation:"h"},
+        margin:{l:60, r:60, t:20, b:40}
+      };
+      Plotly.newPlot("mchart", data, layout);
+    }
+
+    (function init(){
+      const symbolSel = document.getElementById("symbol");
+      const refreshBtn = document.getElementById("refresh");
+      const statusEl = document.getElementById("status");
+
+      async function refresh() {
+        const sym = symbolSel.value;
+        statusEl.textContent = "Refreshing…";
+        try {
+          const m = await loadMetrics(sym);
+          draw(m);
+          const ts = new Date().toLocaleTimeString();
+          statusEl.textContent = `Last updated ${ts}`;
+        } catch (e) {
+          console.error(e);
+          statusEl.textContent = "Failed to load metrics";
+          alert("Failed to load metrics");
+        }
+      }
+
+      refreshBtn.addEventListener("click", refresh);
+      symbolSel.addEventListener("change", refresh);
+
+      // Initial load
+      refresh();
+
+      // Auto-refresh every 30s
+      setInterval(refresh, 30000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+.container {
+  max-width: 900px;
+  margin: 32px auto;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+select,
+button {
+  padding: 8px 12px;
+}
+a {
+  text-decoration: none;
+}
