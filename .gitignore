@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# tests & tooling
+.pytest_cache/
+
+# local data
+*.db
+data/*.csv
+
+# OS
+.DS_Store
+Thumbs.db
